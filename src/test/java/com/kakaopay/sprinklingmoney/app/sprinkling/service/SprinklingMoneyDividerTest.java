@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.junit.Test;
 
+import com.kakaopay.sprinklingmoney.app.common.exception.SprinklingMoneyException;
 import com.kakaopay.sprinklingmoney.app.user.User;
 
 import lombok.extern.slf4j.Slf4j;
@@ -61,5 +62,11 @@ public class SprinklingMoneyDividerTest {
 		assertTrue(ratioList3.stream().mapToInt(Integer::intValue).sum() == SprinklingMoneyDivider.MAX_RATIO);
 	}
 
+	@Test(expected = SprinklingMoneyException.class)
+	public void divideRatioListTest_data_validation_error() {
+		final List<Integer> ratioList = divider.divideRatioList(100);
+		ratioList.stream().forEach(System.out::println);
+		assertTrue(ratioList.stream().mapToInt(Integer::intValue).sum() == SprinklingMoneyDivider.MAX_RATIO);
+	}
 
 }

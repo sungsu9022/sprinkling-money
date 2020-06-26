@@ -11,8 +11,8 @@ import org.springframework.stereotype.Service;
 
 import com.kakaopay.sprinklingmoney.app.common.exception.ErrorCode;
 import com.kakaopay.sprinklingmoney.app.common.exception.SprinklingMoneyException;
-import com.kakaopay.sprinklingmoney.app.user.User;
 import com.kakaopay.sprinklingmoney.app.sprinkling.domain.SprinklingMoney;
+import com.kakaopay.sprinklingmoney.app.user.User;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -20,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 class SprinklingMoneyDivider {
 	static final int MAX_RATIO = 100;
+	static final int MAX_RECEIVER_COUNT = 99;
 
 
 	/**
@@ -92,6 +93,13 @@ class SprinklingMoneyDivider {
 	 * @return
 	 */
 	List<Integer> divideRatioList(int receiverCount) {
+		if(receiverCount >= MAX_RECEIVER_COUNT) {
+			throw SprinklingMoneyException.builder()
+				.errorCode(ErrorCode.DATA_VALIDATION_ERROR)
+				.message(String.format("%s명 이상으로는 뿌리기를 수행할 수 없습니다.", MAX_RECEIVER_COUNT + 1))
+				.build();
+		}
+
 		final List<Integer> ratioList = new ArrayList<>();
 		final Random random = new Random(System.currentTimeMillis());
 
