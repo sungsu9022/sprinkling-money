@@ -20,35 +20,45 @@
 * 각 기능 및 제약사항에 대한 단위테스트를 반드시 작성합니다.
 
 ## 4. 설계
-### DB
-
+### DB 설계
+![스크린샷 2020-06-27 오전 4 21 34](https://user-images.githubusercontent.com/6982740/85893361-b650a900-b82d-11ea-9a20-eec93cc30abc.png)
 
 ## 5. 문제 해결
-- 쿠폰번호 생성은 라이브러리 사용없이 직접 구현
-    - 기본 아이디어
-        - 쿠폰 코드에 가능한 글자 [0-9a-zA-Z]로, 62(=10+26*2) 글자를 한 String 변수로 만듬
-        - 난수를 만들어 위 변수의 index로 부터 쿠폰 코드 한자리를 가져옴
-        - 이것을 쿠폰 코드 자리수인 16번을 반복하여 코드를 만듬
-    - Index를 고르는 랜덤한 난수가 중요
-    - 난수 생성기(Random Number Generator, RNG)        
-        - 완벽한 난수 생성기, True RNG는 하드웨어(전자기 소음, 방사선 원소, 원자 물리적 현상)를 사용해야함
-        - 그래서 아주 긴 시간이 걸리더라도 결국 반복되는 의사 난수 생성기(Pseudorandom Number Generator, PRNG)가 필요
-        - Java의 난수 생성기
-            - JCA에서 여러 provider 중에서 결정하여 사용함
-                - http://d2.naver.com/helloworld/197937
-            - Secure Random library는 암호학적으로 안전한 PRNG(cryptographically secure PRNG, CSPRNG)를 사용
-                - 블룸 블룸 슙(BBS)
-    - 나이브한 아이디어
-        - 하나의 Email에 하나의 쿠폰이 발행되므로, Email을 시드로 사용
-        - epoch 타임을 shift 연산하여 시드로 사용
-    - 현실
-        - 라이브러리를 생성하지 않고 만들어야 함        
-        - 나이브한 방법으로 했을 때, 어느 한 입력값으로부터 쿠폰 코드가 유추된다면?
-            - 문제 없음: (공돌이 생각) 어차피 이메일에 하나의 쿠폰이 발급된다면, 쿠폰 사용 시 이메일 검사를 할 것이다.
-            - 문제 있음: 기존 이메일 정보를 활용할 수 없는 자회사의 새로운 서비스 프로모션이거나 혹은 제휴사, 오프라인에서 제휴하는 이벤트라면 이메일로 검증을 할 수 없다.
-        - WELL이나 메르센 트위스트(CSPRNG는 아니지만)을 구현하는게 맞다고 생각됨
-        - 결론: WELL512와 Random seed를 위한 LGC 구현
+### 5.1. X-USER-ID, X-ROOM-ID header 처리
+> SprinklingMoneyInterceptor, MessageRoomIdArgumentResolver, UserIdArgumentResolver 참조
+ - Interceptor을 통해 유효성 검증
+ - ArgumentResolver를 통해 값 바인딩
 
+### 5.2. token 생성 규칙
+> SprinklingMoneyTokenGenerator 참조
+ - sha256 hash algorithm을 통해 생성하여 해시 충돌을 최소화하는 방향으로 개발
+ - token생성기는 추후 확장이 가능한 형태로 개발하여 제네릭 메소드로 개발됨.
+    - 하지만 현재의 책임은 페이머니 뿌리기에만 한정되어있기 때문에 package-private로 되어있고, 추후 다른곳에서도 공통으로 사용이 필요해지면 common Util 클래스로 변경
+ - sha256 hash algorithm을 쓰더라도 source data가 동일하면 항상 같은 값을 반환하기 때문에 랜덤적인 요소를 위해 SALT로 LocalDateTime.now()을 첨가
+
+### 5.3. token 충돌이 발생하는 경우에 처리가 가능한가?
+ - token request parameter ( PathVariable ) 로 사용하고 있지만 실제 데이터 조회는 roomId + userId 기반으로 처리하도록 개발을 해서 token 충돌이 발생하더라도 서비스 이슈는 없음.
+
+### 5.4 뿌려진 돈 분할 방식
+> SprinklingMoneyDivider 참조
+> 개인적으로 이 부분에서 가장 애를 먹었습니다..(아무렇게나 해도 된다고 하는게 더 어렵네요.)
+
+#### 5.4.1 ratio 분할
+ - 100% ratio를 기준으로 %를 나누는 방식으로 설계
+ - N명의 receiver의 요청이 들어온경우 모두가 최소 1%라도 가져갈수 있는 조건을 정해서 개발했는데 이러다보니 자연스럽게 제약조건이 생기게 됨.(99명 이상으로는 ratio 분할을 할수 없음)
+ - receiver수에 따라 동적으로 ratio을 계산하고, 0%가 나오면 재주첨하는 방식으로 설계
+
+#### 5.4.2 머니 분할
+ - 요청으로 들어온 totalAmount에서 비율을 기준으로 값을 나누려면 올림/반올림/버림 중 선택적으로 수행해야 하는데 이 과정을 조금 심플하게 처리하기 위한 고민
+ - 심플하게 처리하려면 일단 "버림"으로 모두 처리하고 마지막 인덱스에 있는 머니에 차액을 더하도록 처리
+
+#### 5.5 선착순 처리
+ - 과제 스펙 중 "대화방에 있는 다른 사용자들은 위에 발송된 메세지를 클릭하여 금액을 무작위로 받아가게 됩니다" 를 재대로 못보고 개발을 잘못한 부분이 있습니다.
+ - 이 부분에 대한 처리에 대한 설계는 일단 redis Lock을 이용해서 처리하는 방향으로 설계했습니다.
+ - 받기 API 호출시 redis에 돈뿌리기 번호 기준으로 lock을 걸고 자신에게 받기를 할당한 후 받기 작업이 완료되면 lock을 해제하는 방식으로 진행합니다.
+ - 이 과정에서 동시다발적으로 request가 들어올수 있을텐데 이 경우에는 lock이 풀렸는지 체크하면서 대기하도록 합니다.(여기서 thread가 적제되는 위험이 있는데 이건 서버 자원을 적절히 투입해서 대응해야 하는 부분입니다.)
+ - lock 체크 loop에서 lock이 풀리면 receiver수가 모두 찼는지 확인하고 비어있으면 다시 lock을 걸고 머니를 할당하는 방식으로 처리합니다.
+ - 이 부분은 미쳐 개발하지는 못한 부분입니다..ㅠ
 
 ## 6. API 정보
 
