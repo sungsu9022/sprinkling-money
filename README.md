@@ -6,6 +6,7 @@
  - JAVA8
  - Spring Boot 2.3.1.RELEASE
  - JPA(Hibernate) - H2(inMemory)
+ - Redis
  - Build : Maven
  
 ## 2. Build & Execute
