@@ -9,6 +9,7 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EntityListeners;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
@@ -67,7 +68,7 @@ public class SprinklingMoney {
 	@Column(name = "created_date")
 	private LocalDateTime createdDate;
 
-	@OneToMany(mappedBy = "sprinklingMoney", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "sprinklingMoney", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
 	private List<SprinklingMoneyReceive> receiveList = new ArrayList<>();
 
 	@Builder(toBuilder = true)

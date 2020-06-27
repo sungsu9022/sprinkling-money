@@ -1,6 +1,4 @@
-package com.kakaopay.sprinklingmoney.app.sprinkling.service;
-
-import com.kakaopay.sprinklingmoney.app.user.User;
+package com.kakaopay.sprinklingmoney.app.receive.service;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,10 +10,6 @@ import lombok.ToString;
 @Builder(toBuilder = true)
 @ToString
 class DividedMoney {
-	private User member;
+	private String userId;
 	private long amount;
-
-	public void addAmount(long amount) {
-		this.amount += amount;
-	}
 }

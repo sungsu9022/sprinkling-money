@@ -62,7 +62,8 @@ public class SprinklingMoneyController {
 	 */
 	@PutMapping("/money/sprinkling/receive/{token}")
 	public ResponseModel putMoneySprinklingReceive(@PathVariable String token, User user, String roomId) {
-		final SprinklingMoneyReceive receive = receiveService.receive(token, user.getId(), roomId);
+		final SprinklingMoney sprinklingMoney = moneyService.getSprinklingMoney(token, roomId);
+		final SprinklingMoneyReceive receive = receiveService.receive(sprinklingMoney, user.getId());
 		return new SuccessResponse(new MoneySprinklingAmount(receive.getMoney()));
 	}
 
@@ -74,7 +75,7 @@ public class SprinklingMoneyController {
 	@GetMapping("/money/sprinkling/receive/{token}")
 	public ResponseModel getMoneySprinklingReceive(@PathVariable String token, User user, String roomId) {
 		final SprinklingMoney money = moneyService.getSprinklingMoney(token, user.getId(), roomId);
-		final List<SprinklingMoneyReceive> receiveList = receiveService.getSprinklingMoneyReceiveList(money.getNo());
+		final List<SprinklingMoneyReceive> receiveList = money.getReceiveList();
 		return new SuccessResponse(MoneySprinklingAndReceiver.create(money,receiveList));
 	}
 }
