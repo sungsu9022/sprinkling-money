@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.kakaopay.sprinklingmoney.app.common.exception.ErrorCode;
 import com.kakaopay.sprinklingmoney.app.common.exception.SprinklingMoneyException;
+import com.kakaopay.sprinklingmoney.app.lock.RedisLock;
 import com.kakaopay.sprinklingmoney.app.receive.domain.SprinklingMoneyReceive;
 import com.kakaopay.sprinklingmoney.app.receive.repository.SprinklingMoneyReceiveRepository;
 import com.kakaopay.sprinklingmoney.app.sprinkling.domain.SprinklingMoney;
@@ -28,6 +29,8 @@ public class SprinklingMoneyReceiveService {
 	 * @param roomId
 	 * @return
 	 */
+	@Transactional
+	@RedisLock(key = "#token")
 	public SprinklingMoneyReceive receive(String token, String userId, String roomId) {
 		final SprinklingMoney money = moneyRepository.findByTokenAndMessageRoomId(token, roomId)
 			.orElseThrow(() -> SprinklingMoneyException.builder()
