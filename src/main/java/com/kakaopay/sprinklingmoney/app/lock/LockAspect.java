@@ -29,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 public class LockAspect implements Ordered, InitializingBean {
 	private static final ThreadLocal<Boolean> isLocked = new ThreadLocal<>();
 	private static final long THREAD_WAITING_TIME = 100; // 100ms
+	private static final long timeout = 5000;
 	private static ConcurrentHashMap<String, Expression> expCache;
 	private static ExpressionParser parser;
 
@@ -55,6 +56,8 @@ public class LockAspect implements Ordered, InitializingBean {
 			if(!lockService.isLocked(lockKey)) {
 				break;
 			}
+
+			// TODO 최대 requestTimeout 처리될수 있도록 throw Exception 처리
 		}
 
 		if(isBeginPoint) {
@@ -85,8 +88,10 @@ public class LockAspect implements Ordered, InitializingBean {
 		MethodSignature signature = (MethodSignature) joinPoint.getSignature();
 		RedisLock annotation = signature.getMethod().getAnnotation(RedisLock.class);
 		final StandardEvaluationContext standardEvaluationContext = makeContext(joinPoint, signature);
+		final String key = (String) getKeyByExp(annotation.key(), standardEvaluationContext);
+		final String prefixKey = annotation.prefixKey();
 
-		return (String) getKeyByExp(annotation.key(), standardEvaluationContext);
+		return String.format("%s_%s", prefixKey, key);
 	}
 
 

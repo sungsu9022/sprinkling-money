@@ -17,4 +17,6 @@ public @interface RedisLock {
 	 * @return
 	 */
 	String key() default "";
+
+	String prefixKey() default "";
 }

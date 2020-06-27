@@ -30,7 +30,7 @@ public class SprinklingMoneyReceiveService {
 	 * @return
 	 */
 	@Transactional
-	@RedisLock(key = "#token")
+	@RedisLock(prefixKey = "sprinklingMoney", key = "#token")
 	public SprinklingMoneyReceive receive(String token, String userId, String roomId) {
 		final SprinklingMoney money = moneyRepository.findByTokenAndMessageRoomId(token, roomId)
 			.orElseThrow(() -> SprinklingMoneyException.builder()
