@@ -24,6 +24,13 @@ class RandomMoneyGenerator {
 		final int currentReceiverCount = (int) sprinklingMoney.getReceiveList().stream().count();
 		final long currentReceivedMoney = sprinklingMoney.getReceiveList().stream().mapToLong(SprinklingMoneyReceive::getMoney).sum();
 
+		if(sprinklingMoney.getReceiverCount() == currentReceiverCount + 1) {
+			return DividedMoney.builder()
+				.userId(userId)
+				.amount(sprinklingMoney.getAmount() - currentReceivedMoney)
+				.build();
+		}
+
 		final int ratio = determinateRatio(sprinklingMoney.getReceiverCount() - currentReceiverCount);
 		final long money = determinateMoney(sprinklingMoney.getAmount(), currentReceivedMoney, ratio);
 

@@ -16,10 +16,18 @@ X-ROOM-ID: 3a87933c-ea2a-4667-8cd2-dcd076c07eb4
 {"receiverCount":2,"amount":10000}
 
 ### 2. 받기 API
-PUT http://localhost:8080//money/sprinkling/receive/1ff HTTP/1.1
+###
+###, "cea55869-f8bb-4b7b-b142-40c073d124a5"
+#			, "5510eae0-cf4c-4488-a6e4-07e25ad030e0"
+#			, "d61b76f0-5708-4ca6-8e20-c2897dbea1c8"
+#			, "129ae99d-c21f-4020-bfa1-a2a71a4a1e8a")
+###
+PUT http://localhost:8080//money/sprinkling/receive/c82 HTTP/1.1
 Accept: *
 Content-Type: application/json
 X-USER-ID: 5510eae0-cf4c-4488-a6e4-07e25ad030e0
+X-ROOM-ID: 3a87933c-ea2a-4667-8cd2-dcd076c07eb4
+
 
 ### 3. 조회 API
 GET http://localhost:8080/money/sprinkling/receive/1ff	 HTTP/1.1

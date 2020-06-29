@@ -1,7 +1,6 @@
 package com.kakaopay.sprinklingmoney.app.receive.service;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
@@ -13,7 +12,6 @@ import com.kakaopay.sprinklingmoney.app.lock.RedisLock;
 import com.kakaopay.sprinklingmoney.app.receive.domain.SprinklingMoneyReceive;
 import com.kakaopay.sprinklingmoney.app.receive.repository.SprinklingMoneyReceiveRepository;
 import com.kakaopay.sprinklingmoney.app.sprinkling.domain.SprinklingMoney;
-import com.kakaopay.sprinklingmoney.app.sprinkling.repository.SprinklingMoneyRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SprinklingMoneyReceiveService {
 	private final SprinklingMoneyReceiveRepository receiveRepository;
-	private final SprinklingMoneyRepository moneyRepository;
+	private final RandomMoneyGenerator generator;
 
 	/**
 	 * 페이머니 받기
@@ -58,18 +56,9 @@ public class SprinklingMoneyReceiveService {
 				.build();
 		}
 
-		final SprinklingMoneyReceive receive = SprinklingMoneyReceive.create(money, userId, 1000);
+		DividedMoney dividedMoney = generator.create(money, userId);
+		final SprinklingMoneyReceive receive = SprinklingMoneyReceive.create(money, userId, dividedMoney.getAmount());
 		receive.setReceiveDate(LocalDateTime.now());
 		return receiveRepository.save(receive);
-	}
-
-	/**
-	 * 뿌리진 페이머니 대상 목록 저장
-	 * @param list
-	 * @return
-	 */
-	@Transactional
-	public List<SprinklingMoneyReceive> saveSprinklingMoneyList(List<SprinklingMoneyReceive> list) {
-		return receiveRepository.saveAll(list);
 	}
 }
