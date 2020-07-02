@@ -13,7 +13,6 @@ import com.kakaopay.sprinklingmoney.app.lock.RedisLock;
 import com.kakaopay.sprinklingmoney.app.receive.domain.SprinklingMoneyReceive;
 import com.kakaopay.sprinklingmoney.app.receive.repository.SprinklingMoneyReceiveRepository;
 import com.kakaopay.sprinklingmoney.app.sprinkling.domain.SprinklingMoney;
-import com.kakaopay.sprinklingmoney.app.sprinkling.repository.SprinklingMoneyRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SprinklingMoneyReceiveService {
 	private final SprinklingMoneyReceiveRepository receiveRepository;
-	private final SprinklingMoneyRepository moneyRepository;
+	private final RandomMoneyGenerator randomMoneyGenerator;
 
 	/**
 	 * 페이머니 받기
@@ -58,7 +57,7 @@ public class SprinklingMoneyReceiveService {
 				.build();
 		}
 
-		final SprinklingMoneyReceive receive = SprinklingMoneyReceive.create(money, userId, 1000);
+		final SprinklingMoneyReceive receive = SprinklingMoneyReceive.create(money, userId, randomMoneyGenerator.createMoney(money));
 		receive.setReceiveDate(LocalDateTime.now());
 		return receiveRepository.save(receive);
 	}

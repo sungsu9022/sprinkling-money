@@ -21,26 +21,33 @@ public class RandomMoneyGeneratorTest {
 
 	@Test(expected = SprinklingMoneyException.class)
 	public void determinateRatio_max_receiver_count() {
-		generator.determinateRatio(100);
+		generator.determinateRatio(3, 100);
+	}
+
+	@Test
+	public void restRatio() {
+		final double ratio  = (double)7500 / 10000 * 100;
+		log.info("ratio : {}", ratio);
+		assertTrue(ratio == 75);
 	}
 
 	@Test
 	public void determinateRatio() {
 		IntStream.range(0, 100)
-			.map(i -> generator.determinateRatio(50))
+			.map(i -> generator.determinateRatio(50, 5))
 			.forEach(ratio -> log.info("ratio : {}", ratio));
 	}
 
 	@Test
 	public void determinateMoney_failure() {
 		final long money = generator.determinateMoney(100, 70, 35);
+		log.info("money : {}", money);
 		assertTrue(money == 0);
 	}
 
 	@Test
 	public void determinateMoney_success() {
-		int totalAmount = 100, currentReceivedMoney = 40, ratio = 35;
-		final long money = generator.determinateMoney(totalAmount, currentReceivedMoney, ratio);
+		final long money = generator.determinateMoney(100, 40, 35);
 		log.info("money : {}", money);
 		assertTrue(money == (long) Math.floor(100 * 0.01 * 35));
 	}

@@ -25,8 +25,7 @@ public class LockService {
 		final ValueOperations<String, Object> vop = redisTemplate.opsForValue();
 		final String redisLockKey = createKey(key);
 		log.info("redisLockKey : {}", redisLockKey);
-		vop.set(redisLockKey, JsonUtils.toJson(value));
-		redisTemplate.expire(redisLockKey, EXPIRED_MINUTES, TimeUnit.MINUTES);
+		vop.set(redisLockKey, JsonUtils.toJson(value), EXPIRED_MINUTES, TimeUnit.MINUTES);
 	}
 
 	public <T> void removeLock(String key) {

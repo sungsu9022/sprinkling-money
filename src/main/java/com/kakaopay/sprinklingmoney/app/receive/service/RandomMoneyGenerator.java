@@ -21,21 +21,24 @@ class RandomMoneyGenerator {
 	 * @return
 	 */
 	public DividedMoney create(SprinklingMoney sprinklingMoney, String userId) {
-		final int currentReceiverCount = (int) sprinklingMoney.getReceiveList().stream().count();
-		final long currentReceivedMoney = sprinklingMoney.getReceiveList().stream().mapToLong(SprinklingMoneyReceive::getMoney).sum();
-
-		final int ratio = determinateRatio(sprinklingMoney.getReceiverCount() - currentReceiverCount);
-		final long money = determinateMoney(sprinklingMoney.getAmount(), currentReceivedMoney, ratio);
-
 		return DividedMoney.builder()
 			.userId(userId)
-			.amount(money)
+			.amount(createMoney(sprinklingMoney))
 			.build();
 	}
 
 	long createMoney(SprinklingMoney sprinklingMoney) {
 		final int currentReceiverCount = (int) sprinklingMoney.getReceiveList().stream().count();
 		final long currentReceivedMoney = sprinklingMoney.getReceiveList().stream().mapToLong(SprinklingMoneyReceive::getMoney).sum();
+		final int currentRestRatio = (int) ((sprinklingMoney.getAmount() - currentReceivedMoney) / Long.valueOf(sprinklingMoney.getAmount()).doubleValue() * MAX_RATIO);
+		final int currentRestReceiverCount = sprinklingMoney.getReceiverCount() - currentReceiverCount;
+
+		if(sprinklingMoney.isCompleted()) {
+			throw SprinklingMoneyException.builder()
+				.errorCode(ErrorCode.NOT_EXIST)
+				.message("이미 뿌린돈 받기가 모두 완료되었습니다.")
+				.build();
+		}
 
 		if(sprinklingMoney.getAmount() == currentReceivedMoney) {
 			return 0;
@@ -45,11 +48,16 @@ class RandomMoneyGenerator {
 			return sprinklingMoney.getAmount() - currentReceivedMoney;
 		}
 
+		return makeRandomMoney(sprinklingMoney, currentReceivedMoney, currentRestRatio, currentRestReceiverCount);
+
+	}
+
+	private long makeRandomMoney(SprinklingMoney sprinklingMoney, long currentReceivedMoney, int currentRestRatio, int currentRestReceiverCount) {
 		long result;
 		int loopCount =0;
 		while (true) {
 			loopCount++;
-			int randomRatio = determinateRatio(sprinklingMoney.getReceiverCount() - currentReceiverCount);
+			int randomRatio = determinateRatio(currentRestRatio, currentRestReceiverCount);
 			result = determinateMoney(sprinklingMoney.getAmount(), currentReceivedMoney, randomRatio);
 			if(RANDOM_MONEY_MAX_LOOP_COUNT < loopCount && sprinklingMoney.getAmount() < sprinklingMoney.getReceiverCount()) {
 				break;
@@ -63,7 +71,6 @@ class RandomMoneyGenerator {
 		}
 
 		return result;
-
 	}
 
 	boolean isLastReceiver(SprinklingMoney sprinklingMoney) {
@@ -92,7 +99,7 @@ class RandomMoneyGenerator {
 	 * @param restReceiverCount
 	 * @return
 	 */
-	int determinateRatio(int restReceiverCount) {
+	int determinateRatio(int restRatio, int restReceiverCount) {
 		if(restReceiverCount >= MAX_RECEIVER_COUNT) {
 			throw SprinklingMoneyException.builder()
 				.errorCode(ErrorCode.DATA_VALIDATION_ERROR)
@@ -103,7 +110,7 @@ class RandomMoneyGenerator {
 		final Random random = new Random(System.currentTimeMillis());
 
 		int ratio = 0;
-		int currentRestRatio = MAX_RATIO - restReceiverCount;
+		int currentRestRatio = restRatio;
 		while(true) {
 			// 비율 추첨이 완료되면 반복문 종료
 			if(ratio > 0) {
@@ -117,7 +124,7 @@ class RandomMoneyGenerator {
 			}
 
 			// 모든 인원이 최소 1%라도 가져갈수 있도록 (멤버의비율 + 남은인원)보다 큰 경우 재추첨
-			if(MAX_RATIO <= (randomRatio + restReceiverCount)) {
+			if(currentRestRatio <= (randomRatio + restReceiverCount)) {
 				continue;
 			}
 

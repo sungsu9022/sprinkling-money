@@ -106,5 +106,10 @@ public class SprinklingMoney {
 		return LocalDateTime.now().isAfter(this.expireDate);
 	}
 
+	@JsonIgnore
+	public boolean isCompleted() {
+		return this.receiverCount == this.receiveList.stream().count();
+	}
+
 
 }

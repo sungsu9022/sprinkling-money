@@ -1,6 +1,8 @@
 package com.kakaopay.sprinklingmoney.app.lock;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -18,6 +20,8 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Component;
 
 import com.kakaopay.sprinklingmoney.app.common.aspect.AspectOrder;
+import com.kakaopay.sprinklingmoney.app.common.exception.ErrorCode;
+import com.kakaopay.sprinklingmoney.app.common.exception.SprinklingMoneyException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,8 +35,11 @@ public class LockAspect implements Ordered, InitializingBean {
 	private static final long THREAD_WAITING_TIME = 100; // 100ms
 	private static ConcurrentHashMap<String, Expression> expCache;
 	private static ExpressionParser parser;
+	private static final long MAX_WAITING_TIME = 1;
+	private static final TimeUnit MAX_REQUST_WAITING_TIME_UNIT = TimeUnit.SECONDS;
 
 	private final LockService lockService;
+	private final TimeoutExecutorService timeoutExecutorService;
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
@@ -50,13 +57,21 @@ public class LockAspect implements Ordered, InitializingBean {
 			isBeginPoint = true;
 		}
 
+		final CompletableFuture<Void> timeoutFuture = timeoutExecutorService.timeout(MAX_WAITING_TIME, MAX_REQUST_WAITING_TIME_UNIT);
+
 		while (serviceLocked) {
 			Thread.sleep(THREAD_WAITING_TIME);
 			if(!lockService.isLocked(lockKey)) {
 				break;
 			}
 
-			// TODO 최대 requestTimeout 처리될수 있도록 throw Exception 처리
+			if(timeoutFuture.isCompletedExceptionally()) {
+				log.info("timeout.isCompletedExceptionally");
+				throw SprinklingMoneyException.builder()
+					.errorCode(ErrorCode.TIMEOUT)
+					.message("요청시간이 초과되었습니다. 잠시 후 다시 시도해주세요.")
+					.build();
+			}
 		}
 
 		if(isBeginPoint) {
